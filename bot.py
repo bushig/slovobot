@@ -3,15 +3,15 @@ import telegram
 from telegram.ext import Updater, CommandHandler
 
 import config
+from handlers import start_single
 
 updater = Updater(config.TOKEN)
 dispatcher = updater.dispatcher
 
-# Handlers
-def start(bot, update):
-    bot.sendMessage(chat_id=update.message.chat_id, text="Биби я бот!")
 
-start_handler = CommandHandler('start', start)
+
+start_handler = CommandHandler('singleplayer', start_single)
+
 dispatcher.add_handler(start_handler)
 
 updater.start_webhook(listen="0.0.0.0",
