@@ -18,7 +18,6 @@ class User(Base):
     games_won = Column(Integer, default=0)
 
     active_games = relationship('ActiveGame', secondary='ActiveGameUserLink')
-    current_words = relationship('ActiveGame', secondary='ActiveGameWordLink')
 
 
 class Word(Base):
