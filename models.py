@@ -12,8 +12,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     first_name = Column(String)
-    last_name = Column(String)
-    username = Column(String)
+    last_name = Column(String, nullable=True)
+    username = Column(String, nullable=True)
     games_played = Column(Integer, default=0)
     games_won = Column(Integer, default=0)
 
@@ -30,6 +30,8 @@ class ActiveGame(Base):
 
     id = Column(Integer, primary_key=True)
     chat_id = Column(Integer)
+    has_started = Column(Boolean, default=False)
+    #add time between answers in seconds
     players = relationship(User, secondary='ActiveGameWordLink')
     guessed_words = relationship(Word, secondary='ActiveGameWordLink')
 
@@ -49,4 +51,3 @@ class ActiveGameUserLink(Base):
 
     game_id = Column(Integer, ForeignKey('ActiveGame.id'), primary_key=True)
     user_id = Column(Integer, ForeignKey('User.id'), primary_key=True)
-    is_playing = Column(Boolean, default=True)

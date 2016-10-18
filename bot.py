@@ -7,40 +7,68 @@ import random
 
 import config
 from models import Base, engine
+from models import ActiveGame, User, ActiveGameUserLink
 
 updater = Updater(config.TOKEN)
 dispatcher = updater.dispatcher
 
-#Configure sessionmaker for sqlalchemy
+# Configure sessionmaker for sqlalchemy
 Session = sessionmaker(bind=engine)
 
 
-#Function to listen players messages in singleplayer
-def listen_single(bot, update):
-    print('listened')
-    bot.sendMessage(chat_id=update.message.chat_id, text=str(random.randint(1,100)))
+# Function to listen players messages in singleplayer
+def listen_players(bot, update):
+    bot.sendMessage(chat_id=update.message.chat_id, text=str(random.randint(1, 100)))
 
 
-#Function to start singleplayer
-def start_single(bot, update):
-    bot.sendMessage(chat_id=update.message.chat_id, text="Да начанется синглплеер!")
-    message_handler = MessageHandler(Filters.text, listen_single)
-    dispatcher.add_handler(message_handler)
+# Function to add user to ActiveGame and register user if not registered
+def signup(bot, update):
+    session = Session()
+    user = session.query(User).get(update.message.from_user.id)
+    if not user:
+        user = User(id=update.message.from_user.id,
+                    first_name=update.message.from_user.first_name,
+                    last_name=update.message.from_user.last_name,
+                    username=update.message.from_user.username)
+        session.add(user)
+        session.commit()
+        bot.sendMessage(chat_id=update.message.chat_id, text='Новый пользователь {}'.format(user.first_name))
+
+    active_game = session.query(ActiveGame).filter_by(chat_id=update.message.chat_id)
+    if not active_game:
+        active_game = ActiveGame(chat_id=update.message.chat_id)
+        session.add(active_game)
+        session.commit()
+
+    player = session.query(ActiveGameUserLink).filter_by(game_id=active_game.game_id, user_id=user.id)
+    if not player:
+        player = ActiveGameUserLink(game_id=active_game.game_id, user_id=user.id)
+        session.add(player)
+        session.commit()
+        bot.sendMessage(chat_id=update.message.chat_id,
+                        text='Пользователь {} присоединился к игре.'.format(user.first_name))
+    else:
+        bot.sendMessage(chat_id=update.message.chat_id,
+                        text='Пользователь {} уже участвует в этой игре.'.format(user.first_name))
 
 
+# Function to start game
+def start_game(bot, update):
+    # Добавить всех пользователей в чате в бд, если их нет и создать Active game
 
+    bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру в с игроками...")
 
 
 # Add handlers to dispatcher
-dispatcher.add_handler(CommandHandler('singleplayer', start_single))
+dispatcher.add_handler(CommandHandler('start', start_single))
+dispatcher.add_handler(CommandHandler('signup', signup))
+dispatcher.add_handler(MessageHandler(Filters.text, listen_players))
 
-#Start server
-if __name__=='__main__':
+# Start server
+if __name__ == '__main__':
     Base.metadata.create_all(engine)
     updater.start_webhook(listen="0.0.0.0",
                           port=config.PORT,
                           url_path=config.TOKEN)
     updater.bot.setWebhook("https://slovobot.herokuapp.com/" + config.TOKEN)
     updater.idle()
-
-
