@@ -32,7 +32,7 @@ class ActiveGame(Base):
     chat_id = Column(Integer)
     has_started = Column(Boolean, default=False)
     #add time between answers in seconds
-    players = relationship(User, secondary='ActiveGameWordLink')
+    players = relationship(User, secondary='ActiveGameUserLink')
     guessed_words = relationship(Word, secondary='ActiveGameWordLink')
 
 
