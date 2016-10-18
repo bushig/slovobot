@@ -4,11 +4,15 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from sqlalchemy.orm import sessionmaker
 
 import random
+import logging
 
 import config
 from models import Base, engine
 from models import ActiveGame, User, ActiveGameUserLink
 
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 updater = Updater(config.TOKEN)
 dispatcher = updater.dispatcher
 
@@ -32,6 +36,7 @@ def signup(bot, update):
                     username=update.message.from_user.username)
         session.add(user)
         session.commit()
+        logging.info('New user {} registered'.format(user.first_name))
         bot.sendMessage(chat_id=update.message.chat_id, text='Новый пользователь {}'.format(user.first_name))
 
     active_game = session.query(ActiveGame).filter_by(chat_id=update.message.chat_id)
@@ -39,12 +44,14 @@ def signup(bot, update):
         active_game = ActiveGame(chat_id=update.message.chat_id)
         session.add(active_game)
         session.commit()
+        logging.info('New active game created')
 
     player = session.query(ActiveGameUserLink).filter_by(game_id=active_game.game_id, user_id=user.id)
     if not player:
         player = ActiveGameUserLink(game_id=active_game.game_id, user_id=user.id)
         session.add(player)
         session.commit()
+        logging.info('New player {} added to game {}'.format(user.first_name, active_game.id))
         bot.sendMessage(chat_id=update.message.chat_id,
                         text='Пользователь {} присоединился к игре.'.format(user.first_name))
     else:
