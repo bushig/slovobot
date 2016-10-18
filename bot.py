@@ -17,7 +17,8 @@ def start_single(bot, update):
 
 #Function to listen players messages in singleplayer
 def listen_single(bot, update):
-    bot.sendMessage(chat_id=update.message.chat_id, text=random.randint(1,100))
+    print('listened')
+    bot.sendMessage(chat_id=update.message.chat_id, text=str(random.randint(1,100)))
 
 
 
