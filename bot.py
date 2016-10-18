@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from sqlalchemy.orm import sessionmaker
+
+import random
 
 import config
+from models import Base, engine
 
 updater = Updater(config.TOKEN)
 dispatcher = updater.dispatcher
 
-import random
+#Configure sessionmaker for sqlalchemy
+Session = sessionmaker(bind=engine)
 
 
 #Function to listen players messages in singleplayer
@@ -30,12 +35,12 @@ def start_single(bot, update):
 dispatcher.add_handler(CommandHandler('singleplayer', start_single))
 
 #Start server
-updater.start_webhook(listen="0.0.0.0",
-                      port=config.PORT,
-                      url_path=config.TOKEN)
-updater.bot.setWebhook("https://slovobot.herokuapp.com/" + config.TOKEN)
-updater.idle()
-
-
+if __name__=='__main__':
+    Base.metadata.create_all(engine)
+    updater.start_webhook(listen="0.0.0.0",
+                          port=config.PORT,
+                          url_path=config.TOKEN)
+    updater.bot.setWebhook("https://slovobot.herokuapp.com/" + config.TOKEN)
+    updater.idle()
 
 
