@@ -9,16 +9,20 @@ dispatcher = updater.dispatcher
 
 import random
 
+
+#Function to listen players messages in singleplayer
+def listen_single(bot, update):
+    print('listened')
+    bot.sendMessage(chat_id=update.message.chat_id, text=str(random.randint(1,100)))
+
+
 #Function to start singleplayer
 def start_single(bot, update):
     bot.sendMessage(chat_id=update.message.chat_id, text="Да начанется синглплеер!")
     message_handler = MessageHandler(Filters.text, listen_single)
     dispatcher.add_handler(message_handler)
 
-#Function to listen players messages in singleplayer
-def listen_single(bot, update):
-    print('listened')
-    bot.sendMessage(chat_id=update.message.chat_id, text=str(random.randint(1,100)))
+
 
 
 
