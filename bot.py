@@ -60,7 +60,7 @@ def start_game(bot, update):
 
 
 # Add handlers to dispatcher
-dispatcher.add_handler(CommandHandler('start', start_single))
+dispatcher.add_handler(CommandHandler('start', start_game))
 dispatcher.add_handler(CommandHandler('signup', signup))
 dispatcher.add_handler(MessageHandler(Filters.text, listen_players))
 
