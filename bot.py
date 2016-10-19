@@ -10,7 +10,6 @@ import config
 from models import Base, engine
 from models import ActiveGame, User, ActiveGameUserLink
 
-
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 updater = Updater(config.TOKEN)
@@ -47,9 +46,9 @@ def signup(bot, update):
         logging.info('New active game created in chat {}'.format(update.message.chat_id))
 
     player = session.query(ActiveGameUserLink).filter_by(game_id=active_game.id, user_id=user.id).one_or_none()
-    #print('ИГРОК:', player, 'Активная игра:',active_game.id,'Пользователь', user.id)
+    # print('ИГРОК:', player, 'Активная игра:',active_game.id,'Пользователь', user.id)
     if not player:
-        player = ActiveGameUserLink(game_id=active_game.chat_id, user_id=user.id)
+        player = ActiveGameUserLink(game_id=active_game.id, user_id=user.id)
         session.add(player)
         session.commit()
         logging.info('New player {} added to game {}'.format(user.first_name, active_game.id))
@@ -65,14 +64,22 @@ def start_game(bot, update):
     # Вывести пользователей которые играют и сделать игру активной. Назначить первого пользователя и проверить чтобы было минимум 2 игрока
     session = Session()
     players = session.query(ActiveGame).get(update.message.chat_id).players
+    player_count = len(players)
     player_names = ', '.join([player.first_name for player in players])
-    bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}".format(player_names))
+    game = session.query(ActiveGame).get(update.message.chat_id)
+    if game and player_count > 1:
+        game.has_started = True
+        session.commit()
+        bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}".format(player_names))
+    else:
+        bot.sendMessage(chat_id=update.message.chat_id,
+                        text="Нельзя начать игру, так как минимальное количество игроков: 2. Введите комманду /signup чтобы присоединиться")
 
 
 # Add handlers to dispatcher
 dispatcher.add_handler(CommandHandler('start', start_game))
 dispatcher.add_handler(CommandHandler('signup', signup))
-#dispatcher.add_handler(CommandHandler('giveup', giveup))
+# dispatcher.add_handler(CommandHandler('giveup', giveup))
 dispatcher.add_handler(MessageHandler([Filters.text], listen_players))
 
 # Start server
