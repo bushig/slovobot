@@ -17,8 +17,6 @@ class User(Base):
     games_played = Column(Integer, default=0)
     games_won = Column(Integer, default=0)
 
-    active_games = relationship('ActiveGame', secondary='ActiveGameUserLink')
-
 
 class Word(Base):
     __tablename__ = 'Word'
@@ -35,7 +33,7 @@ class ActiveGame(Base):
     has_started = Column(Boolean, default=False)
     #add time between answers in seconds
 
-    players = relationship(User, secondary='ActiveGameUserLink')
+    players = relationship(User, secondary='ActiveGameUserLink', backref='active_games')
     guessed_words = relationship(Word, secondary='ActiveGameWordLink')
 
 
@@ -43,8 +41,8 @@ class ActiveGameWordLink(Base):
     """Guessed words of active game"""
     __tablename__ = 'ActiveGameWordLink'
 
-    game_id = Column(Integer, ForeignKey('ActiveGame.id'), primary_key=True)
-    word_id = Column(Integer, ForeignKey('Word.id'), primary_key=True)
+    game_id = Column(Integer, ForeignKey('ActiveGame.id'))
+    word_id = Column(Integer, ForeignKey('Word.id'))
     #user_id = Column(Integer, ForeignKey('User.id'))
 
 
@@ -52,5 +50,5 @@ class ActiveGameUserLink(Base):
     """Players of active game"""
     __tablename__ = 'ActiveGameUserLink'
 
-    game_id = Column(Integer, ForeignKey('ActiveGame.id'), primary_key=True)
-    user_id = Column(Integer, ForeignKey('User.id'), primary_key=True)
+    game_id = Column(Integer, ForeignKey('ActiveGame.id'))
+    user_id = Column(Integer, ForeignKey('User.id'))
