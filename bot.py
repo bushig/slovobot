@@ -46,7 +46,8 @@ def signup(bot, update):
         session.commit()
         logging.info('New active game created')
 
-    player = session.query(ActiveGameUserLink).filter_by(game_id=active_game.id, user_id=user.id)
+    player = session.query(ActiveGameUserLink).filter_by(game_id=active_game.id, user_id=user.id).first()
+    print('ИГРОК:', player, 'Активная игра:',active_game.id,'Пользователь', user.id)
     if not player:
         player = ActiveGameUserLink(game_id=active_game.game_id, user_id=user.id)
         session.add(player)
