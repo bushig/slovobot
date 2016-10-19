@@ -28,7 +28,7 @@ class Word(Base):
 class ActiveGame(Base):
     __tablename__ = 'active_game'
 
-    chat_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True) #chat_id
     has_started = Column(Boolean, default=False)
     #add time between answers in seconds
 

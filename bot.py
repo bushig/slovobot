@@ -41,12 +41,12 @@ def signup(bot, update):
 
     active_game = session.query(ActiveGame).get(update.message.chat_id)
     if not active_game:
-        active_game = ActiveGame(chat_id=update.message.chat_id)
+        active_game = ActiveGame(id=update.message.chat_id)
         session.add(active_game)
         session.commit()
         logging.info('New active game created in chat {}'.format(update.message.chat_id))
 
-    player = session.query(ActiveGameUserLink).filter_by(game_id=active_game.chat_id, user_id=user.id).one_or_none()
+    player = session.query(ActiveGameUserLink).filter_by(game_id=active_game.id, user_id=user.id).one_or_none()
     #print('ИГРОК:', player, 'Активная игра:',active_game.id,'Пользователь', user.id)
     if not player:
         player = ActiveGameUserLink(game_id=active_game.chat_id, user_id=user.id)
@@ -65,7 +65,7 @@ def start_game(bot, update):
     # Вывести пользователей которые играют и сделать игру активной. Назначить первого пользователя и проверить чтобы было минимум 2 игрока
     session = Session()
     players = session.query(ActiveGame).get(update.message.chat_id).players.all()
-    player_names = ','.join([player.first_name for player in players])
+    player_names = ', '.join([player.first_name for player in players])
     bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}".format(player_names))
 
 
