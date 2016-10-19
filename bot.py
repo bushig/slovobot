@@ -30,7 +30,7 @@ def get_or_add_user(bot, update, session):
         session.commit()
         logging.info('New user {} registered'.format(user.first_name))
         bot.sendMessage(chat_id=update.message.chat_id, text='Новый пользователь {}'.format(user.first_name))
-        return user
+    return user
 
 # Function to listen players messages in singleplayer
 def listen_players(bot, update):
@@ -79,7 +79,7 @@ def start_game(bot, update):
         bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}".format(player_names))
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
-                        text="Нельзя начать игру, так как минимальное количество игроков: 2. Сейчас игроков: {}. Введите команду /signup чтобы присоединиться".format(player_count))
+                        text="Нельзя начать игру, так как минимальное количество игроков: 2. Сейчас игроков: {}. Введите команду /join чтобы присоединиться".format(player_count))
 
 
 # Add handlers to dispatcher
