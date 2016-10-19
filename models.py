@@ -8,7 +8,7 @@ Base = declarative_base()
 
 
 class User(Base):
-    __tablename__ = 'User'
+    __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
     first_name = Column(String)
@@ -19,36 +19,36 @@ class User(Base):
 
 
 class Word(Base):
-    __tablename__ = 'Word'
+    __tablename__ = 'word'
 
     id = Column(Integer, primary_key=True)
     word = Column(String(120))
 
 
 class ActiveGame(Base):
-    __tablename__ = 'ActiveGame'
+    __tablename__ = 'active_game'
 
     id = Column(Integer, primary_key=True)
     chat_id = Column(Integer)
     has_started = Column(Boolean, default=False)
     #add time between answers in seconds
 
-    players = relationship(User, secondary='ActiveGameUserLink', backref='active_games')
-    guessed_words = relationship(Word, secondary='ActiveGameWordLink')
+    players = relationship(User, secondary='active_game_user_link', backref='active_games')
+    guessed_words = relationship(Word, secondary='active_game_word_link'')
 
 
 class ActiveGameWordLink(Base):
     """Guessed words of active game"""
-    __tablename__ = 'ActiveGameWordLink'
+    __tablename__ = 'active_game_word_link'
 
-    game_id = Column(Integer, ForeignKey('ActiveGame.id'), primary_key=True)
-    word_id = Column(Integer, ForeignKey('Word.id'), primary_key=True)
+    game_id = Column(Integer, ForeignKey('active_game.id'), primary_key=True)
+    word_id = Column(Integer, ForeignKey('word.id'), primary_key=True)
     #user_id = Column(Integer, ForeignKey('User.id'))
 
 
 class ActiveGameUserLink(Base):
     """Players of active game"""
-    __tablename__ = 'ActiveGameUserLink'
+    __tablename__ = 'active_game_user_link'
 
-    game_id = Column(Integer, ForeignKey('ActiveGame.id'), primary_key=True)
-    user_id = Column(Integer, ForeignKey('User.id'), primary_key=True)
+    game_id = Column(Integer, ForeignKey('active_game.id'), primary_key=True)
+    user_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
