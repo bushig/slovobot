@@ -18,15 +18,8 @@ dispatcher = updater.dispatcher
 # Configure sessionmaker for sqlalchemy
 Session = sessionmaker(bind=engine)
 
-
-# Function to listen players messages in singleplayer
-def listen_players(bot, update):
-    bot.sendMessage(chat_id=update.message.chat_id, text=str(random.randint(1, 100)))
-
-
-# Function to add user to ActiveGame and register user if not registered
-def signup(bot, update):
-    session = Session()
+# Function to add user in DB
+def get_or_add_user(bot, update, session):
     user = session.query(User).get(update.message.from_user.id)
     if not user:
         user = User(id=update.message.from_user.id,
@@ -37,7 +30,17 @@ def signup(bot, update):
         session.commit()
         logging.info('New user {} registered'.format(user.first_name))
         bot.sendMessage(chat_id=update.message.chat_id, text='Новый пользователь {}'.format(user.first_name))
+        return user
 
+# Function to listen players messages in singleplayer
+def listen_players(bot, update):
+    bot.sendMessage(chat_id=update.message.chat_id, text=str(random.randint(1, 100)))
+
+
+# Function to add user to ActiveGame and register user if not registered
+def join(bot, update):
+    session = Session()
+    user = get_or_add_user(bot, update, session)
     active_game = session.query(ActiveGame).get(update.message.chat_id)
     if not active_game:
         active_game = ActiveGame(id=update.message.chat_id)
@@ -63,6 +66,7 @@ def signup(bot, update):
 def start_game(bot, update):
     # Вывести пользователей которые играют и сделать игру активной. Назначить первого пользователя и проверить чтобы было минимум 2 игрока
     session = Session()
+    user = get_or_add_user(bot, update, session)
     game = session.query(ActiveGame).get(update.message.chat_id)
     player_count = 0
     if game:
@@ -80,7 +84,7 @@ def start_game(bot, update):
 
 # Add handlers to dispatcher
 dispatcher.add_handler(CommandHandler('start', start_game))
-dispatcher.add_handler(CommandHandler('signup', signup))
+dispatcher.add_handler(CommandHandler('join', join))
 # dispatcher.add_handler(CommandHandler('giveup', giveup))
 dispatcher.add_handler(MessageHandler([Filters.text], listen_players))
 
