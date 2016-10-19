@@ -39,7 +39,7 @@ def signup(bot, update):
         logging.info('New user {} registered'.format(user.first_name))
         bot.sendMessage(chat_id=update.message.chat_id, text='Новый пользователь {}'.format(user.first_name))
 
-    active_game = session.query(ActiveGame).filter_by(chat_id=update.message.chat_id)
+    active_game = session.query(ActiveGame).filter_by(chat_id=update.message.chat_id).first()
     if not active_game:
         active_game = ActiveGame(chat_id=update.message.chat_id)
         session.add(active_game)
