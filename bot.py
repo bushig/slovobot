@@ -77,6 +77,9 @@ def start_game(bot, update):
         game.has_started = True
         session.commit()
         bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}".format(player_names))
+
+        bot.sendMessage(chat_id=update.message.chat_id, text="Первым ходит  {}".format(players[0].first_name))
+
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
                         text="Нельзя начать игру, так как минимальное количество игроков: 2. Сейчас игроков: {}. Введите команду /join чтобы присоединиться".format(player_count))

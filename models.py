@@ -30,6 +30,7 @@ class ActiveGame(Base):
 
     id = Column(Integer, primary_key=True) #chat_id
     has_started = Column(Boolean, default=False)
+    current_player = Column(Integer, default=0)
     #add time between answers in seconds
 
     players = relationship(User, secondary='active_game_user_link', backref='active_games')
