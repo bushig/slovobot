@@ -64,7 +64,7 @@ def signup(bot, update):
 def start_game(bot, update):
     # Вывести пользователей которые играют и сделать игру активной. Назначить первого пользователя и проверить чтобы было минимум 2 игрока
     session = Session()
-    players = session.query(ActiveGame).get(update.message.chat_id).players.all()
+    players = session.query(ActiveGame).get(update.message.chat_id).players
     player_names = ', '.join([player.first_name for player in players])
     bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}".format(player_names))
 
