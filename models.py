@@ -41,8 +41,8 @@ class ActiveGameWordLink(Base):
     """Guessed words of active game"""
     __tablename__ = 'ActiveGameWordLink'
 
-    game_id = Column(Integer, ForeignKey('ActiveGame.id'))
-    word_id = Column(Integer, ForeignKey('Word.id'))
+    game_id = Column(Integer, ForeignKey('ActiveGame.id'), primary_key=True)
+    word_id = Column(Integer, ForeignKey('Word.id'), primary_key=True)
     #user_id = Column(Integer, ForeignKey('User.id'))
 
 
@@ -50,5 +50,5 @@ class ActiveGameUserLink(Base):
     """Players of active game"""
     __tablename__ = 'ActiveGameUserLink'
 
-    game_id = Column(Integer, ForeignKey('ActiveGame.id'))
-    user_id = Column(Integer, ForeignKey('User.id'))
+    game_id = Column(Integer, ForeignKey('ActiveGame.id'), primary_key=True)
+    user_id = Column(Integer, ForeignKey('User.id'), primary_key=True)
