@@ -34,7 +34,7 @@ class ActiveGame(Base):
     #add time between answers in seconds
 
     players = relationship(User, secondary='active_game_user_link', backref='active_games')
-    guessed_words = relationship(Word, secondary='active_game_word_link'')
+    guessed_words = relationship(Word, secondary='active_game_word_link')
 
 
 class ActiveGameWordLink(Base):
