@@ -16,7 +16,7 @@ def parse_words_from_file(session_cls, filename='word_rus.txt'):
     t = time.time()
     session = session_cls()
     for line in open(filename, mode='r'):
-        word = Word(word=line)
+        word = Word(word=line.rstrip())
         session.add(word)
     session.commit()
     logging.info('Taken time: {:.2f} seconds'.format(time.time() - t))
