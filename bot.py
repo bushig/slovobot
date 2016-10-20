@@ -48,8 +48,8 @@ def listen_players(bot, update):
             return
 
         word = session.query(Word).filter_by(word=message_text).first()
-        word_test = session.query(Word).filter_by(id=random.randint(1, 10000))
-        logging.info('Found word: {} in database by "{}" query, test: {}'.format(word, message_text, word_test))
+        word_test = session.query(Word).get(random.randint(1, 10000))
+        logging.info('Found word: {} in database by "{}" query, test: {}'.format(word, message_text, word_test.word))
         if word and word.word[0] == game.last_letter:
             for let in word.word[::-1]:
                 if let in GOOD_LETTERS:
