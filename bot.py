@@ -48,6 +48,7 @@ def listen_players(bot, update):
             return
 
         word = session.query(Word).filter_by(word=message_text).one_or_none()
+        logging.info('Found word: {} in database'.format(word))
         if word and word.word[0] == game.last_letter:
             for let in word.word[::-1]:
                 if let in GOOD_LETTERS:
