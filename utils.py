@@ -1,11 +1,10 @@
 import time, logging
 
-from models import Word, engine
-from bot import Session
+from models import Word
 
 logging.getLogger(__name__)
 
-def parse_words_from_file(filename='word_rus.txt'):
+def parse_words_from_file(filename='word_rus.txt', session_cls):
     """
     Import data from dictionary to DB. There is no data validation.
     """

@@ -69,6 +69,9 @@ def start_game(bot, update):
     user = get_or_add_user(bot, update, session)
     game = session.query(ActiveGame).get(update.message.chat_id)
     player_count = 0
+    if game and game.has_started:
+        bot.sendMessage(chat_id=update.message.chat_id, text="Игра уже началась")
+        return
     if game:
         players = game.players
         player_count = len(players)
@@ -94,7 +97,7 @@ def main():
     Base.metadata.create_all(engine)
 
     #Import words to db
-    parse_words_from_file()
+    parse_words_from_file(Session)
 
     # Add handlers to dispatcher
     dispatcher.add_handler(CommandHandler('start', start_game))
