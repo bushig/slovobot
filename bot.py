@@ -3,20 +3,19 @@ import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from sqlalchemy.orm import sessionmaker
 
-import random
-import logging
+import random, logging
 
 import config
+from utils import parse_words_from_file
 from models import Base, engine
 from models import ActiveGame, User, ActiveGameUserLink
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-updater = Updater(config.TOKEN)
-dispatcher = updater.dispatcher
 
 # Configure sessionmaker for sqlalchemy
 Session = sessionmaker(bind=engine)
+
 
 # Function to add user in DB
 def get_or_add_user(bot, update, session):
@@ -31,6 +30,7 @@ def get_or_add_user(bot, update, session):
         logging.info('New user {} registered'.format(user.first_name))
         bot.sendMessage(chat_id=update.message.chat_id, text='Новый пользователь {}'.format(user.first_name))
     return user
+
 
 # Function to listen players messages in singleplayer
 def listen_players(bot, update):
@@ -82,20 +82,33 @@ def start_game(bot, update):
 
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
-                        text="Нельзя начать игру, так как минимальное количество игроков: 2. Сейчас игроков: {}. Введите команду /join чтобы присоединиться".format(player_count))
+                        text="Нельзя начать игру, так как минимальное количество игроков: 2. Сейчас игроков: {}. Введите команду /join чтобы присоединиться".format(
+                            player_count))
 
 
-# Add handlers to dispatcher
-dispatcher.add_handler(CommandHandler('start', start_game))
-dispatcher.add_handler(CommandHandler('join', join))
-# dispatcher.add_handler(CommandHandler('giveup', giveup))
-dispatcher.add_handler(MessageHandler([Filters.text], listen_players))
+def main():
+    updater = Updater(config.TOKEN)
+    dispatcher = updater.dispatcher
 
-# Start server
-if __name__ == '__main__':
+    # Initialize DB
     Base.metadata.create_all(engine)
+
+    #Import words to db
+    parse_words_from_file()
+
+    # Add handlers to dispatcher
+    dispatcher.add_handler(CommandHandler('start', start_game))
+    dispatcher.add_handler(CommandHandler('join', join))
+    # dispatcher.add_handler(CommandHandler('giveup', giveup))
+    dispatcher.add_handler(MessageHandler([Filters.text], listen_players))
+
+    # Start bot
     updater.start_webhook(listen="0.0.0.0",
                           port=config.PORT,
                           url_path=config.TOKEN)
-    updater.bot.setWebhook("https://slovobot.herokuapp.com/" + config.TOKEN)
     updater.idle()
+
+
+# Start server
+if __name__ == '__main__':
+    main()
