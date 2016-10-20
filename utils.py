@@ -4,7 +4,8 @@ from models import Word
 
 logging.getLogger(__name__)
 
-def parse_words_from_file(filename='word_rus.txt', session_cls):
+
+def parse_words_from_file(session_cls, filename='word_rus.txt'):
     """
     Import data from dictionary to DB. There is no data validation.
     """
@@ -15,4 +16,4 @@ def parse_words_from_file(filename='word_rus.txt', session_cls):
         word = Word(word=line)
         session.add(word)
     session.commit()
-    logging.info('Taken time: {:.2f} seconds'.format(time.time()-t))
+    logging.info('Taken time: {:.2f} seconds'.format(time.time() - t))
