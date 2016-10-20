@@ -49,6 +49,9 @@ def listen_players(bot, update):
 
         word = session.query(Word).filter_by(word=message_text).first()
         logging.info('Found word: {} in database by "{}" query'.format(word, message_text))
+        if session.query(ActiveGameWordLink).filter_by(word_id=word.id, game_id=game.id).one_or_none():
+            bot.sendMessage(chat_id=update.message.chat_id, text='Это слово уже было угадано')
+            return 
         if word and word.word[0] == game.last_letter:
             for let in word.word[::-1]:
                 if let in GOOD_LETTERS:
@@ -61,7 +64,7 @@ def listen_players(bot, update):
             session.commit()
             bot.sendMessage(chat_id=update.message.chat_id,
                             text="Слово \"{}\" найдено, ходит {}. Вам слово на букву \"{}\"".format(message_text,
-                                                                                                    next_player,
+                                                                                                    next_player.first_name,
                                                                                                     next_letter))
         else:
             bot.sendMessage(chat_id=update.message.chat_id, text="Это слово не подходит, попробуй еще.")
