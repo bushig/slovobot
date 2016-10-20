@@ -48,7 +48,7 @@ def listen_players(bot, update):
             return
 
         word = session.query(Word).filter_by(word=message_text).one_or_none()
-        if word.word[0] == game.last_letter:
+        if word and word.word[0] == game.last_letter:
             for let in word.word[::-1]:
                 if let in GOOD_LETTERS:
                     next_letter = let
@@ -62,8 +62,8 @@ def listen_players(bot, update):
                             text="Слово \"{}\" найдено, ходит {}. Вам слово на букву \"{}\"".format(message_text,
                                                                                                     next_player,
                                                                                                     next_letter))
-
-    bot.sendMessage(chat_id=update.message.chat_id, text=str(random.randint(1, 100)))
+        else:
+            bot.sendMessage(chat_id=update.message.chat_id, text="Это слово не подходит, попробуй еще.")
 
 
 # Function to add user to ActiveGame and register user if not registered
