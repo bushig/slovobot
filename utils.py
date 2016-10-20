@@ -11,7 +11,7 @@ def parse_words_from_file(session_cls, filename='word_rus.txt'):
     """
     logging.info('Starting import of words to DB')
     t = time.time()
-    session = Session()
+    session = session_cls()
     for line in open(filename, mode='r'):
         word = Word(word=line)
         session.add(word)
