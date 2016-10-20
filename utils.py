@@ -4,6 +4,9 @@ from models import Word
 
 logging.getLogger(__name__)
 
+GOOD_LETTERS = ["а", "б", "в", "г", "д", "е", "ж", "з", "и", "й", "к", "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф",
+                "х", "ц", "ч", "ш", "щ", "э", "ю", "я"]
+
 
 def parse_words_from_file(session_cls, filename='word_rus.txt'):
     """

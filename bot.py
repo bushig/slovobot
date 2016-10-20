@@ -6,9 +6,9 @@ from sqlalchemy.orm import sessionmaker
 import random, logging
 
 import config
-from utils import parse_words_from_file
+from utils import parse_words_from_file, GOOD_LETTERS
 from models import Base, engine
-from models import ActiveGame, User, ActiveGameUserLink
+from models import ActiveGame, User, ActiveGameUserLink, Word, ActiveGameWordLink
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -32,8 +32,37 @@ def get_or_add_user(bot, update, session):
     return user
 
 
-# Function to listen players messages in singleplayer
+# Function to listen players messages in multiplayer
 def listen_players(bot, update):
+    message_text = update.message.text.lower()
+    if len(message_text.split()) != 1: return
+    session = Session()
+    user = get_or_add_user(bot, update, session)
+    game = session.query(ActiveGame).get(update.message.chat_id)
+    if game and game.has_started:
+        players = game.players
+        right_player = players[game.current_player]
+        if user != right_player:
+            bot.sendMessage(chat_id=update.message.chat_id,
+                            text='Сейчас должен ходить {}'.format(right_player.first_name))
+            return
+
+        word = session.query(Word).filter_by(word=message_text).one_or_none()
+        if word.word[0] == game.last_letter:
+            for let in word.word[::-1]:
+                if let in GOOD_LETTERS:
+                    next_letter = let
+                    break
+            game.current_player = (a + 1) % len(players)
+            next_player = players[game.current_player]
+            game.guessed_words.append(word)
+            game.last_letter = next_letter
+            session.commit()
+            bot.sendMessage(chat_id=update.message.chat_id,
+                            text="Слово \"{}\" найдено, ходит {}. Вам слово на букву \"{}\"".format(message_text,
+                                                                                                    next_player,
+                                                                                                    next_letter))
+
     bot.sendMessage(chat_id=update.message.chat_id, text=str(random.randint(1, 100)))
 
 
@@ -50,13 +79,16 @@ def join(bot, update):
 
     player = session.query(ActiveGameUserLink).filter_by(game_id=active_game.id, user_id=user.id).one_or_none()
     # print('ИГРОК:', player, 'Активная игра:',active_game.id,'Пользователь', user.id)
-    if not player:
+    if not player and not active_game.has_started:
         player = ActiveGameUserLink(game_id=active_game.id, user_id=user.id)
         session.add(player)
         session.commit()
         logging.info('New player {} added to game {}'.format(user.first_name, active_game.id))
         bot.sendMessage(chat_id=update.message.chat_id,
                         text='Пользователь {} присоединился к игре.'.format(user.first_name))
+    elif active_game.has_started:
+        bot.sendMessage(chat_id=update.message.chat_id,
+                        text="Игра уже началась")
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
                         text='Пользователь {} уже участвует в этой игре.'.format(user.first_name))
@@ -78,10 +110,13 @@ def start_game(bot, update):
         player_names = ', '.join([player.first_name for player in players])
     if game and player_count > 1:
         game.has_started = True
+        letter = random.choice(GOOD_LETTERS)
+        game.last_letter = letter
         session.commit()
         bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}".format(player_names))
 
-        bot.sendMessage(chat_id=update.message.chat_id, text="Первым ходит  {}".format(players[0].first_name))
+        bot.sendMessage(chat_id=update.message.chat_id,
+                        text="Первым ходит {}. Первая буква: {}".format(players[0].first_name, letter))
 
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
@@ -96,7 +131,7 @@ def main():
     # Initialize DB
     Base.metadata.create_all(engine)
 
-    #Import words to db
+    # Import words to db
     parse_words_from_file(Session)
 
     # Add handlers to dispatcher
