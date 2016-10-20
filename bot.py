@@ -48,14 +48,13 @@ def listen_players(bot, update):
             return
 
         word = session.query(Word).filter_by(word=message_text).first()
-        word_test = session.query(Word).get(random.randint(1, 10000))
-        logging.info('Found word: {} in database by "{}" query, test: {}'.format(word, message_text, word_test.word))
+        logging.info('Found word: {} in database by "{}" query'.format(word, message_text))
         if word and word.word[0] == game.last_letter:
             for let in word.word[::-1]:
                 if let in GOOD_LETTERS:
                     next_letter = let
                     break
-            game.current_player = (a + 1) % len(players)
+            game.current_player = (game.current_player + 1) % len(players)
             next_player = players[game.current_player]
             game.guessed_words.append(word)
             game.last_letter = next_letter
