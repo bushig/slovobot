@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 import random, logging
 
 import config
-from utils import parse_words_from_file, GOOD_LETTERS
+from utils import parse_words_from_file, get_or_add_user, is_game_over, GOOD_LETTERS
 from models import Base, engine
 from models import ActiveGame, User, ActiveGameUserLink, Word, ActiveGameWordLink
 
@@ -15,21 +15,6 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 # Configure sessionmaker for sqlalchemy
 Session = sessionmaker(bind=engine)
-
-
-# Function to add user in DB
-def get_or_add_user(bot, update, session):
-    user = session.query(User).get(update.message.from_user.id)
-    if not user:
-        user = User(id=update.message.from_user.id,
-                    first_name=update.message.from_user.first_name,
-                    last_name=update.message.from_user.last_name,
-                    username=update.message.from_user.username)
-        session.add(user)
-        session.commit()
-        logging.info('New user {} registered'.format(user.first_name))
-        bot.sendMessage(chat_id=update.message.chat_id, text='Новый пользователь {}'.format(user.first_name))
-    return user
 
 
 # Function to listen players messages in multiplayer
@@ -44,14 +29,14 @@ def listen_players(bot, update):
         right_player = players[game.current_player]
         if user != right_player:
             bot.sendMessage(chat_id=update.message.chat_id,
-                            text='Сейчас должен ходить {}'.format(right_player.first_name))
+                            text='Сейчас должен ходить {}.'.format(right_player.first_name))
             return
 
         word = session.query(Word).filter_by(word=message_text).first()
         logging.info('Found word: {} in database by "{}" query'.format(word, message_text))
         if word and word.word[0] == game.last_letter:
             if session.query(ActiveGameWordLink).filter_by(word_id=word.id, game_id=game.id).one_or_none():
-                bot.sendMessage(chat_id=update.message.chat_id, text='Это слово уже было угадано')
+                bot.sendMessage(chat_id=update.message.chat_id, text='Это слово уже было угадано.')
                 return
             for let in word.word[::-1]:
                 if let in GOOD_LETTERS:
@@ -63,11 +48,34 @@ def listen_players(bot, update):
             game.last_letter = next_letter
             session.commit()
             bot.sendMessage(chat_id=update.message.chat_id,
-                            text="Слово \"{}\" найдено, ходит {}. Вам слово на букву \"{}\"".format(message_text,
+                            text="Слово \"{}\" найдено, ходит {}. Вам слово на букву \"{}\".".format(message_text,
                                                                                                     next_player.first_name,
                                                                                                     next_letter))
         else:
             bot.sendMessage(chat_id=update.message.chat_id, text="Это слово не подходит, попробуй еще.")
+
+
+# Function to give up, if player don't want to play further or dont know next word
+def giveup(bot, update):
+    session = Session()
+    user = get_or_add_user(bot, update, session)
+    game = session.query(ActiveGame).get(update.message.chat_id)
+    if game and game.has_started:
+        if user not in game.players:
+            bot.sendMessage(chat_id=update.message.chat_id, text='Вы не участвуете в этой игре.')
+        elif user == game.players[game.current_player]:
+            game.players.remove(user)
+            user.games_played += 1
+            if game.current_player > len(game.players)-1:
+                game.current_player = 0
+            session.commit()
+            if not is_game_over(bot, update, session):
+                bot.sendMessage(chat_id=update.message.chat_id, text='Игрок {} покинул игру, следующим ходит {}'.format(user.first_name, game.players[game.current_player]))
+        else:
+            bot.sendMessage(chat_id=update.message.chat_id, text='Дождитесь своего хода чтобы покинуть игру.')
+
+    else:
+        bot.sendMessage(chat_id=update.message.chat_id, text='В этом чате нет активной игры.')
 
 
 # Function to add user to ActiveGame and register user if not registered
@@ -92,7 +100,7 @@ def join(bot, update):
                         text='Пользователь {} присоединился к игре.'.format(user.first_name))
     elif active_game.has_started:
         bot.sendMessage(chat_id=update.message.chat_id,
-                        text="Игра уже началась")
+                        text="Игра уже началась.")
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
                         text='Пользователь {} уже участвует в этой игре.'.format(user.first_name))
@@ -106,7 +114,7 @@ def start_game(bot, update):
     game = session.query(ActiveGame).get(update.message.chat_id)
     player_count = 0
     if game and game.has_started:
-        bot.sendMessage(chat_id=update.message.chat_id, text="Игра уже началась")
+        bot.sendMessage(chat_id=update.message.chat_id, text="Игра уже началась.")
         return
     if game:
         players = game.players
@@ -117,14 +125,14 @@ def start_game(bot, update):
         letter = random.choice(GOOD_LETTERS)
         game.last_letter = letter
         session.commit()
-        bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}".format(player_names))
+        bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}.".format(player_names))
 
         bot.sendMessage(chat_id=update.message.chat_id,
-                        text="Первым ходит {}. Первая буква: {}".format(players[0].first_name, letter))
+                        text="Первым ходит {}. Первая буква: {}.".format(players[0].first_name, letter))
 
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
-                        text="Нельзя начать игру, так как минимальное количество игроков: 2. Сейчас игроков: {}. Введите команду /join чтобы присоединиться".format(
+                        text="Нельзя начать игру, так как минимальное количество игроков: 2. Сейчас игроков: {}. Введите команду /join чтобы присоединиться.".format(
                             player_count))
 
 
@@ -141,7 +149,7 @@ def main():
     # Add handlers to dispatcher
     dispatcher.add_handler(CommandHandler('start', start_game))
     dispatcher.add_handler(CommandHandler('join', join))
-    # dispatcher.add_handler(CommandHandler('giveup', giveup))
+    dispatcher.add_handler(CommandHandler('giveup', giveup))
     dispatcher.add_handler(MessageHandler([Filters.text], listen_players))
 
     # Start bot
