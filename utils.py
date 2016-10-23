@@ -43,7 +43,7 @@ def is_game_over(bot, update, session):
         winner = game.players[0]
         winner.games_played += 1
         winner.games_won += 1
-        game.delete()
+        session.delete(game)
         session.commit()
         bot.sendMessage(chat_id=update.message.chat_id,
                         text='Игра закончена. Победил игрок {}'.format(winner.first_name))
