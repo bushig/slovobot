@@ -42,6 +42,7 @@ def listen_players(bot, update):
                 if let in GOOD_LETTERS:
                     next_letter = let
                     break
+            # TODO: If no good next letter in word, select random letter
             game.current_player = (game.current_player + 1) % len(players)
             next_player = players[game.current_player]
             game.guessed_words.append(word)
@@ -53,6 +54,15 @@ def listen_players(bot, update):
                                                                                                     next_letter))
         else:
             bot.sendMessage(chat_id=update.message.chat_id, text="Это слово не подходит, попробуй еще.")
+
+
+def stats(bot, update):
+    session = Session()
+    user = get_or_add_user(bot, update, session)
+    played = user.games_played
+    won = user.games_won
+    lost = played - won
+    bot.sendMessage(chat_id=update.message.chat_id, text='Статистика игрока {}:\nВсего игр: {}\nВыиграно: {}\nПроиграно: {}'.format(user.first_name, played, won, lost))
 
 
 # Function to give up, if player don't want to play further or dont know next word
@@ -149,6 +159,7 @@ def main():
     # Add handlers to dispatcher
     dispatcher.add_handler(CommandHandler('start', start_game))
     dispatcher.add_handler(CommandHandler('join', join))
+    dispatcher.add_handler(CommandHandler('stats', stats))
     dispatcher.add_handler(CommandHandler('giveup', giveup))
     dispatcher.add_handler(MessageHandler([Filters.text], listen_players))
 
