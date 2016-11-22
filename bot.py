@@ -29,7 +29,8 @@ def listen_players(bot, update):
         right_player = players[game.current_player]
         if user != right_player:
             bot.sendMessage(chat_id=update.message.chat_id,
-                            text='Сейчас должен ходить {}.'.format(right_player.first_name))
+                            text='Сейчас должен ходить *{}*.'.format(right_player.first_name),
+                            parse_mode=telegram.ParseMode.MARKDOWN)
             return
 
         word = session.query(Word).filter_by(word=message_text).first()
@@ -49,9 +50,10 @@ def listen_players(bot, update):
             game.last_letter = next_letter
             session.commit()
             bot.sendMessage(chat_id=update.message.chat_id,
-                            text="Слово \"{}\" найдено, ходит {}. Вам слово на букву \"{}\".".format(message_text,
-                                                                                                    next_player.first_name,
-                                                                                                    next_letter))
+                            text="Слово _\"{}\"_ найдено, ходит {}. Вам слово на букву \"*{}*\".".format(message_text,
+                                                                                                         next_player.first_name,
+                                                                                                         next_letter),
+                            parse_mode=telegram.ParseMode.MARKDOWN)
         else:
             bot.sendMessage(chat_id=update.message.chat_id, text="Это слово не подходит, попробуй еще.")
 
@@ -62,7 +64,9 @@ def stats(bot, update):
     played = user.games_played
     won = user.games_won
     lost = played - won
-    bot.sendMessage(chat_id=update.message.chat_id, text='Статистика игрока {}:\nВсего игр: {}\nВыиграно: {}\nПроиграно: {}'.format(user.first_name, played, won, lost))
+    bot.sendMessage(chat_id=update.message.chat_id,
+                    text='Статистика игрока {}:\nВсего игр: {}\nВыиграно: {}\nПроиграно: {}'.format(user.first_name,
+                                                                                                    played, won, lost))
 
 
 # Function to give up, if player don't want to play further or dont know next word
@@ -76,11 +80,15 @@ def giveup(bot, update):
         elif user == game.players[game.current_player]:
             game.players.remove(user)
             user.games_played += 1
-            if game.current_player > len(game.players)-1:
+            if game.current_player > len(game.players) - 1:
                 game.current_player = 0
             session.commit()
             if not is_game_over(bot, update, session):
-                bot.sendMessage(chat_id=update.message.chat_id, text='Игрок {} покинул игру, следующим ходит {}'.format(user.first_name, game.players[game.current_player]))
+                bot.sendMessage(chat_id=update.message.chat_id,
+                                text='Игрок *{}* покинул игру, следующим ходит *{}*'.format(user.first_name,
+                                                                                            game.players[
+                                                                                                game.current_player]),
+                                parse_mode=telegram.ParseMode.MARKDOWN)
         else:
             bot.sendMessage(chat_id=update.message.chat_id, text='Дождитесь своего хода чтобы покинуть игру.')
 
