@@ -87,7 +87,7 @@ def giveup(bot, update):
                 bot.sendMessage(chat_id=update.message.chat_id,
                                 text='Игрок *{}* покинул игру, следующим ходит *{}*'.format(user.first_name,
                                                                                             game.players[
-                                                                                                game.current_player]),
+                                                                                                game.current_player].first_name),
                                 parse_mode=telegram.ParseMode.MARKDOWN)
         else:
             bot.sendMessage(chat_id=update.message.chat_id, text='Дождитесь своего хода чтобы покинуть игру.')
@@ -146,7 +146,8 @@ def start_game(bot, update):
         bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}.".format(player_names))
 
         bot.sendMessage(chat_id=update.message.chat_id,
-                        text="Первым ходит {}. Первая буква: {}.".format(players[0].first_name, letter))
+                        text="Первым ходит {}. Первая буква: *{}*.".format(players[0].first_name, letter),
+                        parse_mode=telegram.ParseMode.MARKDOWN)
 
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
@@ -169,6 +170,7 @@ def main():
     dispatcher.add_handler(CommandHandler('join', join))
     dispatcher.add_handler(CommandHandler('stats', stats))
     dispatcher.add_handler(CommandHandler('giveup', giveup))
+    # dispatcher.add_handler(CommandHandler('info', info))  Display info of current game(user steps count, First letter)
     dispatcher.add_handler(MessageHandler([Filters.text], listen_players))
 
     # Start bot
