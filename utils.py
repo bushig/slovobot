@@ -1,6 +1,10 @@
+import telegram
+
 import time, logging
+import datetime
 
 from models import Word, User, ActiveGame
+
 
 logging.getLogger(__name__)
 
@@ -49,3 +53,37 @@ def is_game_over(bot, update, session):
                         text='Игра закончена. Победил игрок {}'.format(winner.first_name))
         return True
     return False
+
+def check_timeout(bot, update, timeout, turn_start):
+    now = datetime.datetime.now()
+    delta = (now - turn_start).seconds
+    if delta > timeout and timeout != 0:
+        return True
+    else:
+        bot.sendMessage(chat_id=update.message.chat_id,
+                        text='Нужно подождать {} секунд'.format(timeout - delta))
+        return False
+
+def quit_game(bot, update, session, game, player):
+    if game and game.has_started:
+        curr = game.current_player
+        players = game.players
+        player_pos = players.index(player)
+        if player not in players:
+            bot.sendMessage(chat_id=update.message.chat_id, text='Вы не участвуете в этой игре.')
+        else:
+            game.players.remove(player)
+            player.games_played += 1
+            if player_pos < curr:
+                game.current_player -= 1
+            elif game.current_player > len(game.players) - 1:
+                game.current_player = 0
+            session.commit()
+            if not is_game_over(bot, update, session):
+                bot.sendMessage(chat_id=update.message.chat_id,
+                                text='Игрок *{}* покинул игру, следующим ходит *{}*'.format(player.first_name,
+                                                                                            game.players[
+                                                                                                game.current_player].first_name),
+                                parse_mode=telegram.ParseMode.MARKDOWN)
+    else:
+        bot.sendMessage(chat_id=update.message.chat_id, text='В этом чате нет активной игры.')

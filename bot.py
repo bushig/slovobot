@@ -4,9 +4,10 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from sqlalchemy.orm import sessionmaker
 
 import random, logging
+from datetime import datetime
 
 import config
-from utils import parse_words_from_file, get_or_add_user, is_game_over, GOOD_LETTERS
+from utils import parse_words_from_file, get_or_add_user, is_game_over, quit_game, check_timeout,GOOD_LETTERS
 from models import Base, engine
 from models import ActiveGame, User, ActiveGameUserLink, Word, ActiveGameWordLink
 
@@ -34,7 +35,7 @@ def listen_players(bot, update):
             return
 
         word = session.query(Word).filter_by(word=message_text).first()
-        logging.info('Found word: {} in database by "{}" query'.format(word, message_text))
+        logging.info('Found word: {} in database by "{}" query'.format(word, message_text)) # TODO: make unique word constrait
         if word and word.word[0] == game.last_letter:
             if session.query(ActiveGameWordLink).filter_by(word_id=word.id, game_id=game.id).one_or_none():
                 bot.sendMessage(chat_id=update.message.chat_id, text='Это слово уже было угадано.')
@@ -48,6 +49,7 @@ def listen_players(bot, update):
             next_player = players[game.current_player]
             game.guessed_words.append(word)
             game.last_letter = next_letter
+            game.turn_start = datetime.now()
             session.commit()
             bot.sendMessage(chat_id=update.message.chat_id,
                             text="Слово _\"{}\"_ найдено, ходит {}. Вам слово на букву \"*{}*\".".format(message_text,
@@ -74,26 +76,7 @@ def giveup(bot, update):
     session = Session()
     user = get_or_add_user(bot, update, session)
     game = session.query(ActiveGame).get(update.message.chat_id)
-    if game and game.has_started:
-        if user not in game.players:
-            bot.sendMessage(chat_id=update.message.chat_id, text='Вы не участвуете в этой игре.')
-        elif user == game.players[game.current_player]:
-            game.players.remove(user)
-            user.games_played += 1
-            if game.current_player > len(game.players) - 1:
-                game.current_player = 0
-            session.commit()
-            if not is_game_over(bot, update, session):
-                bot.sendMessage(chat_id=update.message.chat_id,
-                                text='Игрок *{}* покинул игру, следующим ходит *{}*'.format(user.first_name,
-                                                                                            game.players[
-                                                                                                game.current_player].first_name),
-                                parse_mode=telegram.ParseMode.MARKDOWN)
-        else:
-            bot.sendMessage(chat_id=update.message.chat_id, text='Дождитесь своего хода чтобы покинуть игру.')
-
-    else:
-        bot.sendMessage(chat_id=update.message.chat_id, text='В этом чате нет активной игры.')
+    quit_game(bot, update, session, game, user)
 
 
 # Function to add user to ActiveGame and register user if not registered
@@ -125,7 +108,15 @@ def join(bot, update):
 
 
 # Function to start game
-def start_game(bot, update):
+def start_game(bot, update, args):
+    # parse time paramert
+    timeout = 0
+    if len(args) <= 1:
+        if len(args) == 1 and args[0].isdigit():
+            timeout = int(args[0])
+    else:
+        bot.sendMessage(chat_id=update.message.chat_id, text="Невалидное время")
+        return
     # Вывести пользователей которые играют и сделать игру активной. Назначить первого пользователя и проверить чтобы было минимум 2 игрока
     session = Session()
     user = get_or_add_user(bot, update, session)
@@ -140,19 +131,34 @@ def start_game(bot, update):
         player_names = ', '.join([player.first_name for player in players])
     if game and player_count > 1:
         game.has_started = True
+        game.timeout = timeout
         letter = random.choice(GOOD_LETTERS)
         game.last_letter = letter
+        game.turn_start = datetime.now()
         session.commit()
         bot.sendMessage(chat_id=update.message.chat_id, text="Начинаем игру с игроками: {}.".format(player_names))
-
-        bot.sendMessage(chat_id=update.message.chat_id,
-                        text="Первым ходит {}. Первая буква: *{}*.".format(players[0].first_name, letter),
+        if timeout == 0:
+            bot.sendMessage(chat_id=update.message.chat_id,
+                            text="Первым ходит {}. Без ограничений по времени. Первая буква: *{}*.".format(
+                                players[0].first_name, letter),
+                            parse_mode=telegram.ParseMode.MARKDOWN)
+        else:
+            bot.sendMessage(chat_id=update.message.chat_id,
+                        text="Первым ходит {}. Допустимое время между ходами:_{}_ Первая буква: *{}*.".format(players[0].first_name, timeout, letter),
                         parse_mode=telegram.ParseMode.MARKDOWN)
 
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
                         text="Нельзя начать игру, так как минимальное количество игроков: 2. Сейчас игроков: {}. Введите команду /join чтобы присоединиться.".format(
                             player_count))
+
+# Skip turn
+def skip(bot, update):
+    session = Session()
+    game = session.query(ActiveGame).get(update.message.chat_id)
+    is_timedout = check_timeout(bot, update, game.timeout, game.turn_start)
+    if is_timedout:
+        quit_game(bot, update, session, game, game.players[game.current_player])
 
 
 def main():
@@ -166,10 +172,11 @@ def main():
     parse_words_from_file(Session)
 
     # Add handlers to dispatcher
-    dispatcher.add_handler(CommandHandler('start', start_game))
+    dispatcher.add_handler(CommandHandler('start', start_game, pass_args=True))
     dispatcher.add_handler(CommandHandler('join', join))
     dispatcher.add_handler(CommandHandler('stats', stats))
     dispatcher.add_handler(CommandHandler('giveup', giveup))
+    dispatcher.add_handler(CommandHandler('skip', skip))
     # dispatcher.add_handler(CommandHandler('info', info))  Display info of current game(user steps count, First letter)
     dispatcher.add_handler(MessageHandler([Filters.text], listen_players))
 

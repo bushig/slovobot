@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
@@ -31,6 +31,8 @@ class ActiveGame(Base):
     id = Column(Integer, primary_key=True) #chat_id
     has_started = Column(Boolean, default=False)
     current_player = Column(Integer, default=0)
+    timeout = Column(Integer, default=0)
+    turn_start = Column(DateTime)
     last_letter = Column(String(1),)
     #add time between answers in seconds
 
