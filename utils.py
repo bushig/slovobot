@@ -60,8 +60,12 @@ def check_timeout(bot, update, timeout, turn_start):
     if delta > timeout and timeout != 0:
         return True
     else:
-        bot.sendMessage(chat_id=update.message.chat_id,
-                        text='Нужно подождать {} секунд'.format(timeout - delta))
+        if timeout == 0:
+            bot.sendMessage(chat_id=update.message.chat_id,
+                            text='В данной игре нет ограничения по времени на ходы.')
+        else:
+            bot.sendMessage(chat_id=update.message.chat_id,
+                            text='Нужно подождать {} секунд'.format(timeout - delta))
         return False
 
 def quit_game(bot, update, session, game, player):

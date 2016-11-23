@@ -52,7 +52,7 @@ def listen_players(bot, update):
             game.turn_start = datetime.now()
             session.commit()
             bot.sendMessage(chat_id=update.message.chat_id,
-                            text="Слово _\"{}\"_ найдено, ходит {}. Вам слово на букву \"*{}*\".".format(message_text,
+                            text="Слово _\"{}\"_ найдено, ходит {}.\nВам слово на букву \"*{}*\".".format(message_text,
                                                                                                          next_player.first_name,
                                                                                                          next_letter),
                             parse_mode=telegram.ParseMode.MARKDOWN)
@@ -98,13 +98,13 @@ def join(bot, update):
         session.commit()
         logging.info('New player {} added to game {}'.format(user.first_name, active_game.id))
         bot.sendMessage(chat_id=update.message.chat_id,
-                        text='Пользователь {} присоединился к игре.'.format(user.first_name))
+                        text='Пользователь *{}* присоединился к игре.'.format(user.first_name), parse_mode=telegram.ParseMode.MARKDOWN)
     elif active_game.has_started:
         bot.sendMessage(chat_id=update.message.chat_id,
                         text="Игра уже началась.")
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
-                        text='Пользователь {} уже участвует в этой игре.'.format(user.first_name))
+                        text='Пользователь *{}* уже участвует в этой игре.'.format(user.first_name), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
 # Function to start game
@@ -115,7 +115,7 @@ def start_game(bot, update, args):
         if len(args) == 1 and args[0].isdigit():
             timeout = int(args[0])
     else:
-        bot.sendMessage(chat_id=update.message.chat_id, text="Невалидное время")
+        bot.sendMessage(chat_id=update.message.chat_id, text="Невалидное время.")
         return
     # Вывести пользователей которые играют и сделать игру активной. Назначить первого пользователя и проверить чтобы было минимум 2 игрока
     session = Session()
@@ -144,12 +144,12 @@ def start_game(bot, update, args):
                             parse_mode=telegram.ParseMode.MARKDOWN)
         else:
             bot.sendMessage(chat_id=update.message.chat_id,
-                        text="Первым ходит {}. Допустимое время между ходами:_{}_ Первая буква: *{}*.".format(players[0].first_name, timeout, letter),
+                        text="Первым ходит {}.\n Допустимое время между ходами: *{}* сек.\n Первая буква: *{}*.".format(players[0].first_name, timeout, letter),
                         parse_mode=telegram.ParseMode.MARKDOWN)
 
     else:
         bot.sendMessage(chat_id=update.message.chat_id,
-                        text="Нельзя начать игру, так как минимальное количество игроков: 2. Сейчас игроков: {}. Введите команду /join чтобы присоединиться.".format(
+                        text="Нельзя начать игру, так как минимальное количество игроков: 2.\n Сейчас игроков: {}.\n Введите команду /join чтобы присоединиться.".format(
                             player_count))
 
 # Skip turn
